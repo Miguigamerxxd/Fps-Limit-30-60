@@ -35,7 +35,9 @@ jobs:
         run: |
           cmake -S "$SRC" -B build-native \
             -DCMAKE_BUILD_TYPE=Release \
-            -DNO_SOUND=ON -DNO_FMOD=ON \
+            -DSERVERONLY=ON \
+            -DNO_SOUND=ON \
+            -DFMOD_INCLUDE_DIR=/usr/include \
             -Wno-dev
           cmake --build build-native --target zipdir lemon re2c -j$(nproc)
 
