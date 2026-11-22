@@ -23,9 +23,16 @@ jobs:
           echo "Código en: $SRC"
           echo "SRC=$SRC" >> $GITHUB_ENV
 
+      - name: Dependencias del sistema (solo para herramientas nativas)
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            libsdl1.2-dev libgl1-mesa-dev libglu1-mesa-dev \
+            pkg-config python3
+
       - name: Herramientas nativas
         run: |
-          cmake -S "$SRC" -B build-native -DCMAKE_BUILD_TYPE=Release
+          cmake -S "$SRC" -B build-native -DCMAKE_BUILD_TYPE=Release -Wno-dev
           cmake --build build-native --target zipdir lemon re2c -j$(nproc)
 
       - name: Compilar para Vita
@@ -33,7 +40,8 @@ jobs:
           cmake -S "$SRC" -B build-vita \
             -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake \
             -DCMAKE_BUILD_TYPE=Release \
-            -DIMPORT_EXECUTABLES=$PWD/build-native/ImportExecutables.cmake
+            -DIMPORT_EXECUTABLES=$PWD/build-native/ImportExecutables.cmake \
+            -Wno-dev
           cmake --build build-vita -j$(nproc)
 
       - name: Subir VPK
