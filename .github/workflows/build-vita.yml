@@ -1,4 +1,3 @@
-
 name: Build VPK
 
 on:
@@ -14,14 +13,24 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Descomprimir y localizar el código
+        run: |
+          for z in *.zip; do
+            [ -f "$z" ] || continue
+            unzip -q -o "$z" -d src_unzipped || python3 -m zipfile -e "$z" src_unzipped
+          done
+          SRC=$(find . -name CMakeLists.txt -not -path "./build-*" -printf '%d %h\n' | sort -n | head -n 1 | cut -d' ' -f2-)
+          echo "Código en: $SRC"
+          echo "SRC=$SRC" >> $GITHUB_ENV
+
       - name: Herramientas nativas
         run: |
-          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release
+          cmake -S "$SRC" -B build-native -DCMAKE_BUILD_TYPE=Release
           cmake --build build-native --target zipdir lemon re2c -j$(nproc)
 
       - name: Compilar para Vita
         run: |
-          cmake -S . -B build-vita \
+          cmake -S "$SRC" -B build-vita \
             -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake \
             -DCMAKE_BUILD_TYPE=Release \
             -DIMPORT_EXECUTABLES=$PWD/build-native/ImportExecutables.cmake
