@@ -39,7 +39,7 @@ jobs:
 
               SRC_DIR="$(dirname "$(find /repo/source -name CMakeLists.txt -print -quit)")"
 
-              vdpm install openssl opus zstd vitaShaRK libmathneon SceShaccCgExt taihen
+              printf 'y\n' | vdpm install openssl opus zstd vitaShaRK libmathneon SceShaccCgExt taihen
 
               git clone --depth 1 https://github.com/Rinnegatamante/vitaGL.git /tmp/vitaGL
               git -C /tmp/vitaGL apply "$SRC_DIR/src/vita/vitagl-zandronum.patch"
