@@ -38,7 +38,7 @@ jobs:
             -DNO_SOUND=ON \
             -DFMOD_INCLUDE_DIR=/usr/include \
             -Wno-dev
-          cmake --build build-native --target zipdir lemon re2c -j$(nproc)
+          cmake --build build-native --target zipdir lemon re2c updaterevision -j$(nproc)
 
       - name: Compilar para Vita (sin sonido)
         run: |
@@ -48,7 +48,19 @@ jobs:
             -DNO_SOUND=ON \
             -DIMPORT_EXECUTABLES=$PWD/build-native/ImportExecutables.cmake \
             -Wno-dev
-          cmake --build build-vita -j$(nproc)
+          set +e
+          cmake --build build-vita -j$(nproc) -- -k > build.log 2>&1
+          STATUS=$?
+          echo "===== ERRORES ====="
+          grep -n -E "error:|undefined reference|\*\*\*" build.log | head -40
+          exit $STATUS
+
+      - name: Subir log de compilación
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Subir VPK
         uses: actions/upload-artifact@v4
