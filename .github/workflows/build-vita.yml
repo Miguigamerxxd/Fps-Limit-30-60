@@ -28,11 +28,14 @@ jobs:
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
             libsdl1.2-dev libgl1-mesa-dev libglu1-mesa-dev \
-            pkg-config python3
+            libssl-dev libxcursor-dev pkg-config python3
 
       - name: Herramientas nativas
         run: |
-          cmake -S "$SRC" -B build-native -DCMAKE_BUILD_TYPE=Release -Wno-dev
+          cmake -S "$SRC" -B build-native \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DNO_SOUND=ON -DNO_FMOD=ON \
+            -Wno-dev
           cmake --build build-native --target zipdir lemon re2c -j$(nproc)
 
       - name: Compilar para Vita
