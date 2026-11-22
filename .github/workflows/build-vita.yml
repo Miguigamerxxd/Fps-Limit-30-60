@@ -1,75 +1,35 @@
 
-name: Build Zandronum Vita VPK
+name: Build VPK
 
 on:
-  workflow_dispatch:
   push:
-    paths:
-      - 'Zandronum-Vita-FPS-30-60-with-workflow.zip'
-      - '.github/workflows/build-vita.yml'
-
-permissions:
-  contents: read
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    container: vitasdk/vitasdk:latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      - name: Extract source ZIP
+      - name: Herramientas nativas
         run: |
-          set -euo pipefail
-          unzip -q Zandronum-Vita-FPS-30-60-with-workflow.zip -d source
-          find source -name CMakeLists.txt
+          cmake -S . -B build-native -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-native --target zipdir lemon re2c -j$(nproc)
 
-      - name: Build with VitaSDK
+      - name: Compilar para Vita
         run: |
-          set -euo pipefail
-          docker pull vitasdk/vitasdk:latest
-          mkdir -p output
-          docker run --rm \
-            -v "${GITHUB_WORKSPACE}:/repo" \
-            -w /repo \
-            vitasdk/vitasdk:latest \
-            bash -lc '
-              set -euo pipefail
-              export PATH="$VITASDK/bin:$PATH"
+          cmake -S . -B build-vita \
+            -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DIMPORT_EXECUTABLES=$PWD/build-native/ImportExecutables.cmake
+          cmake --build build-vita -j$(nproc)
 
-              SRC_DIR="$(dirname "$(find /repo/source -name CMakeLists.txt -print -quit)")"
-
-                            vdpm remove openssl-1.1.1
-              vdpm install openssl opus zstd vitaShaRK libmathneon SceShaccCgExt taihen
-              
-
-              git clone --depth 1 https://github.com/Rinnegatamante/vitaGL.git /tmp/vitaGL
-              git -C /tmp/vitaGL apply "$SRC_DIR/src/vita/vitagl-zandronum.patch"
-              make -C /tmp/vitaGL NO_DEBUG=1 install
-
-              git clone --depth 1 https://github.com/Northfear/SDL-1.2-vita.git /tmp/SDL-1.2-vita
-              git -C /tmp/SDL-1.2-vita apply "$SRC_DIR/src/vita/sdl12-vita-vitagl.patch"
-              make -C /tmp/SDL-1.2-vita -f Makefile.vita SDL_VITAGL=1 install
-
-              cmake -S "$SRC_DIR" -B "$SRC_DIR/build-vita" \
-                -DCMAKE_TOOLCHAIN_FILE="$VITASDK/share/vita.toolchain.cmake" \
-                -DVITA=ON \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DNO_ASM=ON \
-                -DNO_GTK=ON \
-                -DNO_SOUND=ON
-
-              cmake --build "$SRC_DIR/build-vita" --parallel 2
-
-              VPK="$(find "$SRC_DIR/build-vita" -name '*.vpk' -print -quit)"
-              test -n "$VPK"
-              cp "$VPK" /repo/output/zandronum-vita.vpk
-            '
-
-      - name: Upload VPK
+      - name: Subir VPK
         uses: actions/upload-artifact@v4
         with:
-          name: zandronum-vita-vpk
-          path: output/zandronum-vita.vpk
+          name: vpk
+          path: build-vita/**/*.vpk
           if-no-files-found: error
-          retention-days: 7
