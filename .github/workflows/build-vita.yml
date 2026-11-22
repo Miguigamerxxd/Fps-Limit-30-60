@@ -28,7 +28,8 @@ jobs:
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
             libsdl1.2-dev libgl1-mesa-dev libglu1-mesa-dev \
-            libssl-dev libxcursor-dev pkg-config python3
+            libssl-dev libxcursor-dev libzstd-dev \
+            libbz2-dev libjpeg-dev pkg-config python3
 
       - name: Herramientas nativas
         run: |
