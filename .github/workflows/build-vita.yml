@@ -20,10 +20,9 @@ jobs:
             unzip -q -o "$z" -d src_unzipped || python3 -m zipfile -e "$z" src_unzipped
           done
           SRC=$(find . -name CMakeLists.txt -not -path "./build-*" -printf '%d %h\n' | sort -n | head -n 1 | cut -d' ' -f2-)
-          echo "Código en: $SRC"
           echo "SRC=$SRC" >> $GITHUB_ENV
 
-      - name: Dependencias del sistema (solo para herramientas nativas)
+      - name: Dependencias del sistema
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -41,11 +40,12 @@ jobs:
             -Wno-dev
           cmake --build build-native --target zipdir lemon re2c -j$(nproc)
 
-      - name: Compilar para Vita
+      - name: Compilar para Vita (sin sonido)
         run: |
           cmake -S "$SRC" -B build-vita \
             -DCMAKE_TOOLCHAIN_FILE=$VITASDK/share/vita.toolchain.cmake \
             -DCMAKE_BUILD_TYPE=Release \
+            -DNO_SOUND=ON \
             -DIMPORT_EXECUTABLES=$PWD/build-native/ImportExecutables.cmake \
             -Wno-dev
           cmake --build build-vita -j$(nproc)
